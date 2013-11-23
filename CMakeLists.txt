@@ -1,16 +1,19 @@
+
+# Modified for distribution with LuaDist tool
+# changes:
+#	- removed library versioning
+#	- changed option to generate documentation to GENERATE_DOC
+#		(INSTALL_DOC  variable conflicts with the variable in dist.cmake)
+#	- added ALL flag to ADD_CUSTOM_TARGET in generateDoc.cmake
+#		(not the best solution, but it works)
+#	- use install commands from dist.cmake
+#
 # ----------------------------------------------------------------------------
 #   Basic Configuration
 # ----------------------------------------------------------------------------
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-
 PROJECT(aruco)
-set(PROJECT_VERSION "1.2.4")
-string(REGEX MATCHALL "[0-9]" PROJECT_VERSION_PARTS "${PROJECT_VERSION}")
-list(GET PROJECT_VERSION_PARTS 0 PROJECT_VERSION_MAJOR)
-list(GET PROJECT_VERSION_PARTS 1 PROJECT_VERSION_MINOR)
-list(GET PROJECT_VERSION_PARTS 2 PROJECT_VERSION_PATCH)
-set(PROJECT_SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}")
-
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+include( cmake/dist.cmake )
 
 #------------------------------------------------------
 # Build type
@@ -24,19 +27,7 @@ ENDIF()
 # Lib Names and Dirs
 #------------------------------------------------------
 
-if(WIN32)
-    # Postfix of DLLs:
-    SET(PROJECT_DLLVERSION "${PROJECT_VERSION_MAJOR}${PROJECT_VERSION_MINOR}${PROJECT_VERSION_PATCH}")
-    SET(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}")
-    SET(RUNTIME_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Directory for dlls and binaries")
-    SET(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Directory for binaries")
-    SET(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Directory for dlls")
-else()
-    # Postfix of so's:
-    set(PROJECT_DLLVERSION)
-    SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_INSTALL_PREFIX}/lib/cmake/ /usr/lib/cmake)
-endif()
-
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_INSTALL_PREFIX}/lib/cmake/ /usr/lib/cmake)
 
 OPTION(BUILD_SHARED_LIBS 	"Set to OFF to build static libraries" ON)
 
@@ -76,16 +67,13 @@ ENDIF()
 #   PROJECT CONFIGURATION
 #   force some variables that could be defined in the command line to be written to cache
 # ----------------------------------------------------------------------------
-OPTION(INSTALL_DOC 	"Set to ON to build/install Documentation" OFF)
-IF (INSTALL_DOC)
+OPTION(GENERATE_DOC 	"Set to ON to build/install Documentation" OFF)
+IF (GENERATE_DOC)
     FIND_PACKAGE(Doxygen REQUIRED)
-    MESSAGE( STATUS "INSTALL_DOC:         ${INSTALL_DOC} ")
+    MESSAGE( STATUS "INSTALL_DOC:         ${GENERATE_DOC} ")
     INCLUDE("${PROJECT_SOURCE_DIR}/generateDoc.cmake")
     GENERATE_DOCUMENTATION(${PROJECT_SOURCE_DIR}/dox.in)
 ENDIF()
-
-
-
 
 # ----------------------------------------------------------------------------
 #   Uninstall target, for "make uninstall"
@@ -99,9 +87,6 @@ ADD_CUSTOM_TARGET(uninstall "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/c
 
 CONFIGURE_FILE("${PROJECT_SOURCE_DIR}/config.cmake.in" "${PROJECT_BINARY_DIR}/Find${PROJECT_NAME}.cmake")
 INSTALL(FILES "${PROJECT_BINARY_DIR}/Find${PROJECT_NAME}.cmake" DESTINATION lib/cmake/ )
-
-
-
 
 # ----------------------------------------------------------------------------
 #   Program Optimization and debug (Extracted from OpenCV)
@@ -243,7 +228,6 @@ SET(CPACK_PACKAGING_INSTALL_PREFIX "/usr/")
 IF (CPACK_GENERATOR STREQUAL "DEB")
     SET(CPACK_DEBIAN_PACKAGE_DEPENDS "opencv (>= 2.1.0)")
 ENDIF()
-INCLUDE(CPack)
 ENDIF()
 
 #------------------------------------------------
@@ -253,8 +237,6 @@ ADD_SUBDIRECTORY(src)
 IF(NOT ANDROID_CREATION)
   ADD_SUBDIRECTORY(utils)
 ENDIF()
-
-
 
 # ----------------------------------------------------------------------------
 # display status message for important variables
