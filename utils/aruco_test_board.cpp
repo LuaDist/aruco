@@ -28,7 +28,8 @@ or implied, of Rafael Muñoz Salinas.
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <opencv2/opencv.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #include "aruco.h"
 using namespace cv;
 using namespace aruco;
@@ -148,7 +149,9 @@ int main(int argc,char **argv)
         cv::namedWindow("in",1);
 	TheBoardDetector.setParams(TheBoardConfig,TheCameraParameters,TheMarkerSize);
 	TheBoardDetector.getMarkerDetector().getThresholdParams( ThresParam1,ThresParam2);
-	TheBoardDetector.getMarkerDetector().enableErosion(true);//for chessboards
+	TheBoardDetector.getMarkerDetector().setCornerRefinementMethod(MarkerDetector::HARRIS);
+	TheBoardDetector.set_repj_err_thres(1.5);
+// 	TheBoardDetector.getMarkerDetector().enableErosion(true);//for chessboards
         iThresParam1=ThresParam1;
         iThresParam2=ThresParam2;
         cv::createTrackbar("ThresParam1", "in",&iThresParam1, 13, cvTackBarEvents);
@@ -156,7 +159,7 @@ int main(int argc,char **argv)
         char key=0;
         int index=0;
         //capture until press ESC or until the end of the video
-        while ( key!=27 && TheVideoCapturer.grab())
+        do
         {
             TheVideoCapturer.retrieve( TheInputImage);
             TheInputImage.copyTo(TheInputImageCopy);
@@ -176,6 +179,7 @@ int main(int argc,char **argv)
              if (TheCameraParameters.isValid()) {
                 if ( probDetect>0.2)   {
                     CvDrawingUtils::draw3dAxis( TheInputImageCopy,TheBoardDetector.getDetectedBoard(),TheCameraParameters);
+// 		    CvDrawingUtils::draw3dCube(TheInputImageCopy, TheBoardDetector.getDetectedBoard(),TheCameraParameters);
                     //draw3dBoardCube( TheInputImageCopy,TheBoardDetected,TheIntriscCameraMatrix,TheDistorsionCameraParams);
                 }
             }
@@ -201,7 +205,7 @@ int main(int argc,char **argv)
 
             key=cv::waitKey(waitTime);//wait for key to be pressed
             processKey(key);
-        }
+        }while ( key!=27 && TheVideoCapturer.grab());
 
 
     } catch (std::exception &ex)
@@ -225,13 +229,15 @@ void cvTackBarEvents(int pos,void*)
     if (ThresParam2<1) ThresParam2=1;
     ThresParam1=iThresParam1;
     ThresParam2=iThresParam2;
-    TheBoardDetector.getMarkerDetector().setThresholdParams(ThresParam1,ThresParam2);
+     TheBoardDetector.getMarkerDetector().setThresholdParams(ThresParam1,ThresParam2);
 //recompute
 //Detection of the board
     float probDetect=TheBoardDetector.detect( TheInputImage);
+    TheInputImage.copyTo(TheInputImageCopy);
     if (TheCameraParameters.isValid() && probDetect>0.2)
         aruco::CvDrawingUtils::draw3dAxis(TheInputImageCopy,TheBoardDetector.getDetectedBoard(),TheCameraParameters);
 
+    
     cv::imshow("in",TheInputImageCopy);
     cv::imshow("thres",TheBoardDetector.getMarkerDetector().getThresholdedImage());
 }

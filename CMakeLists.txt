@@ -7,6 +7,9 @@
 #	- added ALL flag to ADD_CUSTOM_TARGET in generateDoc.cmake
 #		(not the best solution, but it works)
 #	- use install commands from dist.cmake
+# - fixed OpenMP detection
+# - added FreeGLUT.cmake script
+# - fixed GLUT and FreeGLUT detection
 #
 # ----------------------------------------------------------------------------
 #   Basic Configuration
@@ -48,18 +51,37 @@ ENDIF()
 #FIND OPENGL LIBRARY. In Android, there is no need since it is included
 IF(NOT ANDROID_CREATION)
   find_package(OpenGL)
-  find_package(GLUT)#standard package
+  MESSAGE(STATUS "OPENGL_gl_LIBRARY=${OPENGL_gl_LIBRARY}")
 
-  MESSAGE(STATUS "GLUT_FOUND=${GLUT_FOUND} OPENGL_gl_LIBRARY=${OPENGL_gl_LIBRARY} GLUT_HEADER=${GLUT_HEADER}")
-  IF(NOT GLUT_FOUND) #else, freeglut
-    FIND_LIBRARY(GLUT_glut_LIBRARY     NAMES freeglut)
-    MESSAGE(STATUS "GLUT_glut_LIBRARY=${GLUT_glut_LIBRARY}")
+  find_package(GLUT)#standard package
+  IF(GLUT_FOUND) #else, freeglut
+    MESSAGE(STATUS "GLUT_FOUND=${GLUT_FOUND} GLUT_HEADER=${GLUT_HEADER}")
+  ELSE() #else, freeglut
+    find_package(FreeGLUT)
+    MESSAGE(STATUS "FREEGLUT_LIBRARIES=${FREEGLUT_LIBRARIES}")
   ENDIF()
-  IF ( (NOT GLUT_glut_LIBRARY AND NOT GLUT_FOUND) OR NOT OPENGL_gl_LIBRARY)
-    set(GL_FOUND "NO")
-  ELSE()
+
+  IF ( OPENGL_FOUND AND (GLUT_FOUND OR FREEGLUT_FOUND) )
     set(GL_FOUND "YES")
-    set (OPENGL_LIBS  ${OPENGL_gl_LIBRARY} ${OPENGL_glu_LIBRARY} ${GLUT_glut_LIBRARY})
+    set(OPENGL_LIBS  ${OPENGL_LIBRARIES})
+    if(GL_FOUND)
+      list(APPEND OPENGL_LIBS ${GLUT_LIBRARIES})
+    elseif(FREEGLUT_FOUND)
+      list(APPEND OPENGL_LIBS ${FREEGLUT_LIBRARIES})
+    endif()
+  ELSE()
+    set(GL_FOUND "NO")
+  ENDIF()
+ENDIF()
+
+#Omp
+if(WIN32)
+
+ELSE()
+  FIND_PACKAGE(OpenMP)
+  IF(OPENMP_FOUND)
+  add_definitions(-DUSE_OMP -fopenmp)
+  set (REQUIRED_LIBRARIES ${REQUIRED_LIBRARIES} -lgomp)
   ENDIF()
 ENDIF()
 
@@ -235,7 +257,11 @@ ENDIF()
 #------------------------------------------------
 ADD_SUBDIRECTORY(src)
 IF(NOT ANDROID_CREATION)
-  ADD_SUBDIRECTORY(utils)
+  OPTION(BUILD_UTILS "Set to ON to build/install utilities" ON)
+  IF(BUILD_UTILS)
+    ADD_SUBDIRECTORY(utils)
+    ADD_SUBDIRECTORY(utils_hrm)
+  ENDIF()
 ENDIF()
 
 # ----------------------------------------------------------------------------
