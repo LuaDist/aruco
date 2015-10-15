@@ -31,5 +31,8 @@ IF(GL_FOUND)
 	ADD_EXECUTABLE(aruco_test_board_gl aruco_test_board_gl.cpp)
 	TARGET_LINK_LIBRARIES(aruco_test_board_gl ${OPENGL_LIBS})
 
-	install_executable( aruco_test_gl aruco_test_board_gl )
+	ADD_EXECUTABLE(aruco_test_board_gl_mask aruco_test_board_gl_mask.cpp)
+	TARGET_LINK_LIBRARIES(aruco_test_board_gl_mask ${OPENGL_LIBS})
+
+	install_executable( aruco_test_gl aruco_test_board_gl aruco_test_board_gl_mask )
 ENDIF(GL_FOUND)
