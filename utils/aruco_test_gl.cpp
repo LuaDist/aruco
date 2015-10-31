@@ -26,16 +26,20 @@ authors and should not be interpreted as representing official policies, either 
 or implied, of Rafael Muñoz Salinas.
 ********************************/
 #include <iostream>
-
 #include <fstream>
 #include <sstream>
 #ifdef __APPLE__
-#include <GLUT/glut.h>
+  #include <GLUT/glut.h>
+#elif _MSC_VER
+  //http://social.msdn.microsoft.com/Forums/eu/vcgeneral/thread/7d6e6fa5-afc2-4370-9a1f-991a76ccb5b7
+  #include <windows.h>
+  #include <GL/gl.h>
+  #include <GL/glut.h>
 #else
-#include <windows.h>
-#include <GL/gl.h>
-#include <GL/glut.h>
+  #include <GL/gl.h>
+  #include <GL/glut.h>
 #endif
+
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include "aruco.h"
