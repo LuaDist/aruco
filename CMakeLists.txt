@@ -38,7 +38,7 @@ OPTION(BUILD_SHARED_LIBS 	"Set to OFF to build static libraries" ON)
 #   Find Dependencies
 # ----------------------------------------------------------------------------
 
-FIND_PACKAGE(OpenCV 	REQUIRED )
+FIND_PACKAGE(OpenCV 2.4 	REQUIRED PATHS "/usr/local/opt/opencv@2" "${OpenCV_DIR}")
 set (REQUIRED_LIBRARIES ${OpenCV_LIBS})
 
 
