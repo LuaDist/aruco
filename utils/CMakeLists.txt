@@ -1,38 +1,17 @@
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/src ${GNULIBS_INCLUDE_DIR})
-LINK_LIBRARIES(${PROJECT_NAME} ${REQUIRED_LIBRARIES} )
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
+add_executable(aruco_print_dictionary aruco_print_dictionary.cpp)
+add_executable(aruco_print_marker aruco_print_marker.cpp)
+add_executable(aruco_simple aruco_simple.cpp)
+add_executable(aruco_test aruco_test.cpp)
+add_executable(aruco_tracker aruco_tracker.cpp)
+add_executable(aruco_batch_processing aruco_batch_processing.cpp)
 
-ADD_EXECUTABLE(aruco_test aruco_test.cpp)
-ADD_EXECUTABLE(aruco_simple aruco_simple.cpp)
-ADD_EXECUTABLE(aruco_create_marker aruco_create_marker.cpp)
-ADD_EXECUTABLE(aruco_create_board aruco_create_board.cpp)
-ADD_EXECUTABLE(aruco_selectoptimalmarkers aruco_selectoptimalmarkers.cpp)
-ADD_EXECUTABLE(aruco_simple_board aruco_simple_board.cpp)
-ADD_EXECUTABLE(aruco_test_board aruco_test_board.cpp)
-ADD_EXECUTABLE(aruco_board_pix2meters aruco_board_pix2meters.cpp)
-ADD_EXECUTABLE(aruco_calibration aruco_calibration.cpp)
-ADD_EXECUTABLE(aruco_test_board_stability aruco_test_board_stability.cpp)
+target_link_libraries(aruco_print_dictionary    aruco opencv_calib3d)
+target_link_libraries(aruco_print_marker        aruco opencv_calib3d)
+target_link_libraries(aruco_simple              aruco opencv_calib3d)
+target_link_libraries(aruco_test                aruco opencv_calib3d)
+target_link_libraries(aruco_tracker             aruco opencv_calib3d)
+target_link_libraries(aruco_batch_processing    aruco opencv_calib3d)
 
-install_executable (
-	aruco_test
-	aruco_simple
-	aruco_create_marker
-	aruco_create_board
-	aruco_selectoptimalmarkers
-	aruco_simple_board
-	aruco_test_board
-	aruco_board_pix2meters
-	aruco_calibration
-	aruco_test_board_stability )
-
-IF(GL_FOUND)
-	ADD_EXECUTABLE(aruco_test_gl aruco_test_gl.cpp)
-	TARGET_LINK_LIBRARIES(aruco_test_gl ${OPENGL_LIBS})
-
-	ADD_EXECUTABLE(aruco_test_board_gl aruco_test_board_gl.cpp)
-	TARGET_LINK_LIBRARIES(aruco_test_board_gl ${OPENGL_LIBS})
-
-	ADD_EXECUTABLE(aruco_test_board_gl_mask aruco_test_board_gl_mask.cpp)
-	TARGET_LINK_LIBRARIES(aruco_test_board_gl_mask ${OPENGL_LIBS})
-
-	install_executable( aruco_test_gl aruco_test_board_gl aruco_test_board_gl_mask )
-ENDIF(GL_FOUND)
+#aruco_create_board
+INSTALL(TARGETS aruco_batch_processing aruco_tracker aruco_simple aruco_test aruco_print_marker aruco_print_dictionary       RUNTIME DESTINATION bin)

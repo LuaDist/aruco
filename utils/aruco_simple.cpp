@@ -1,5 +1,5 @@
-/*****************************
-Copyright 2011 Rafael Muñoz Salinas. All rights reserved.
+/**
+Copyright 2017 Rafael Muñoz Salinas. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are
 permitted provided that the following conditions are met:
@@ -24,80 +24,108 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The views and conclusions contained in the software and documentation are those of the
 authors and should not be interpreted as representing official policies, either expressed
 or implied, of Rafael Muñoz Salinas.
-********************************/
+*/
 
 
-#include <iostream>
 #include "aruco.h"
-#include "cvdrawingutils.h"
-#include <opencv2/highgui/highgui.hpp>
+#include <iostream>
+#include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
+#include <string>
+#include <stdexcept>
+
 using namespace cv;
+using namespace std;
 using namespace aruco;
-int main(int argc, char **argv) {
-    try {
-        if (argc < 2) {
-            cerr << "Usage: (in.jpg|in.avi) [cameraParams.yml] [markerSize] [outImage]" << endl;
-            exit(0);
-        }
+// class for parsing command line
+// operator [](string cmd) return  whether cmd is present //string operator ()(string cmd) return the value as a string:
+// -cmd value
+class CmdLineParser{int argc;char** argv;public:CmdLineParser(int _argc, char** _argv): argc(_argc), argv(_argv){}   bool operator[](string param)    {int idx = -1;  for (int i = 0; i < argc && idx == -1; i++)if (string(argv[i]) == param)idx = i;return (idx != -1);}    string operator()(string param, string defvalue = "-1")    {int idx = -1;for (int i = 0; i < argc && idx == -1; i++)if (string(argv[i]) == param)idx = i;if (idx == -1)return defvalue;else return (argv[idx + 1]);}};
 
-
-        aruco::CameraParameters CamParam;
-        MarkerDetector MDetector;
-        vector< Marker > Markers;
-        float MarkerSize = -1;
-        // read the input image
-        cv::Mat InImage;
-        // try opening first as video
-        VideoCapture vreader(argv[1]);
-        if (vreader.isOpened()) {
-            vreader.grab();
-            vreader.retrieve(InImage);
-        } else {
-            InImage = cv::imread(argv[1]);
-        }
-        // at this point, we should have the image in InImage
-        // if empty, exit
-        if (InImage.total() == 0) {
-            cerr << "Could not open input" << endl;
+cv::Mat __resize(const cv::Mat& in, int width)
+{
+    if (in.size().width <= width)
+        return in;
+    float yf = float(width) / float(in.size().width);
+    cv::Mat im2;
+    cv::resize(in, im2, cv::Size(width, static_cast<int>(in.size().height * yf)));
+    return im2;
+}
+int main(int argc, char** argv)
+{
+    try
+    {
+        CmdLineParser cml(argc, argv);
+        if (argc == 1 || cml["-h"])
+        {
+            cerr << "Usage: (in_image|video.avi) [-c cameraParams.yml] [-s markerSize] [-d <dicionary>:ALL_DICTS default] [-f arucoConfig.yml] "   << endl;
+            cerr << "\tDictionaries: ";
+            for (auto dict : aruco::Dictionary::getDicTypes())
+                cerr << dict << " ";
+            cerr << endl;
+            cerr << "\t Instead of these, you can directly indicate the path to a file with your own generated "
+                    "dictionary"
+                 << endl;
+            cout << "Example to work with apriltags dictionary : video.avi -d TAG36h11" << endl << endl;
             return 0;
         }
 
+        aruco::CameraParameters CamParam;
+
+        // read the input image
+        cv::Mat InImage;
+        // Open input and read image
+        VideoCapture vreader(argv[1]);
+        if (vreader.isOpened()) vreader >> InImage;
+        else throw std::runtime_error("Could not open input");
+
         // read camera parameters if specifed
-        if (argc >= 3) {
-            CamParam.readFromXMLFile(argv[2]);
-            // resizes the parameters to fit the size of the input image
-            CamParam.resize(InImage.size());
+        if (cml["-c"])
+            CamParam.readFromXMLFile(cml("-c"));
+
+        // read marker size if specified (default value -1)
+        float MarkerSize = std::stof(cml("-s", "-1"));
+        // Create the detector
+        MarkerDetector MDetector;
+        if(cml["-f"]){//uses a configuration file. YOu can create it from aruco_test application
+                MDetector.loadParamsFromFile(cml("-f"));
         }
-        // read marker size if specified
-        if (argc >= 4)
-            MarkerSize = atof(argv[3]);
-        cv::namedWindow("in", 1);
+        else{
 
+            // Set the dictionary you want to work with, if you included option -d in command line
+           //By default, all valid dictionaries are examined
+            if (cml["-d"])
+                MDetector.setDictionary(cml("-d"), 0.f);
 
+        }
         // Ok, let's detect
-        MDetector.detect(InImage, Markers, CamParam, MarkerSize);
+        vector<Marker> Markers = MDetector.detect(InImage, CamParam, MarkerSize);
+
         // for each marker, draw info and its boundaries in the image
-        for (unsigned int i = 0; i < Markers.size(); i++) {
+        for (unsigned int i = 0; i < Markers.size(); i++)
+        {
             cout << Markers[i] << endl;
             Markers[i].draw(InImage, Scalar(0, 0, 255), 2);
         }
         // draw a 3d cube in each marker if there is 3d info
         if (CamParam.isValid() && MarkerSize != -1)
-            for (unsigned int i = 0; i < Markers.size(); i++) {
+            for (unsigned int i = 0; i < Markers.size(); i++)
+            {
                 CvDrawingUtils::draw3dCube(InImage, Markers[i], CamParam);
             }
         // show input with augmented information
-        cv::imshow("in", InImage);
-        // show also the internal image resulting from the threshold operation
-        cv::imshow("thes", MDetector.getThresholdedImage());
-        cv::waitKey(0); // wait for key to be pressed
+        cv::namedWindow("in", 1);
+        cv::imshow("in", __resize(InImage,1280));
+        while (char(cv::waitKey(0)) != 27)
+            ;  // wait for esc to be pressed
 
-
-        if (argc >= 5)
-            cv::imwrite(argv[4], InImage);
-    } catch (std::exception &ex)
+    }
+    catch (std::exception& ex)
 
     {
         cout << "Exception :" << ex.what() << endl;
     }
 }
+
+
+

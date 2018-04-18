@@ -1,3 +1,106 @@
+Version 3.0.6
+    - Added serialization for MarkerDetector. You can use load/write functions. Allows to save configuration and load it in your app.
+       Use aruco_test to set the best configuration and press 'f' on the app to save the file. Use the file in your apps
+    - Modified aruco_test to allow saving the configuration file.
+    - Added support for enclosed corners calling MarkerDetector::getParameters().detectEnclosedMarkers(true);
+        This is yet experimental.
+    - Added multiples modes of corner refinement (subpixel, lines and none). See MarkerDetector::Params::setCornerRefinementMethod
+    - Improvement in aruco_test application to have more control over the params. Also, allows to save the configuration to file pressing 'f'
+Version 3.0.5
+    - Moved all parameters used in MarkerDetector to MarkerDetector::Params so as to allow serialization
+    - Initial support for enclosed markers
+    - Automatic estimation of the adaptive threshold window size as a function of the image dimensions
+    - Corrected bug in MarkerMapPoseTracker::setParams with the maps expressed in pixels
+Version 3.0.4
+  - Set ALL_DICTS as default behaviour internally in MarkerDetector
+  - Corrected bug in some linux machines with reading directory
+  - Corrected problem with cmake file including the aruco header
+  - Added auto_orient in aruco_calibration_from_images for automatically rotating images taken from cameras if required
+  - Corrected bug in calibration. Ensure camera matrix and distortion coeffs are floats
+  - Enabled minMarkerSize in DM_NORMAL mode
+Version 3.0.3
+  - Changed all opencv2 includes to new style
+  - Corrected compilation error in Opencv 2.4 ( in svnmarkers.cpp related to CV_VERSION_EPOCH)
+Version 3.0.2
+  - added #include <stdexcept> in many files to avoid compilation errors in some old systems
+
+Version 3.0.1
+  - aruco_calibration_fromimage chaged so that it now read files from a dicectory
+Version 3.0.0
+  - Removed all funcions marked as deprecated in version 2.x.x
+  - Removed refinement methods, only subpixel is now available via MarkerDetector::Params::_doSubPixCornerRefinement
+  - MarkerDetector::Params::_maxSize removed
+  - MarkerDetector::Params::_doErosion added for enclosed markers
+  - MarkerDetector::Params::_thresMethod removed, always will use adaptive threshold
+
+Version 2.0.20 (Luis Diaz Collaboration)
+  - clang
+  - cmake improved
+  - many bugs corrected
+  - improved detection of enclosed markers
+  - improved aruco_test app with more options to debug possible misdetections
+Version 2.0.19
+  - corrected bug in utils/aruco_print_marker.cpp
+Version 2.0.18
+  - added support for custom dictionaries
+  - added ChiliTags dictionary
+  - utils/aruco_print_marker added option to print a marker with enclosed squareg to allow subpixel refinement
+Version 2.0.17
+  - Bug in hamming distances corrected
+  - Bug in dictionary.cpp with the creation of
+Version 2.0.16
+  - corrected bug in MSVC compilation due to linking problems
+
+Version 2.0.15
+  - corrected bug in MarkerDetector::detectRectangles. The check isContourConvex was removed at some point and has now been set again
+Version 2.0.14
+  - corrected bug in dictionary.cpp with ARUCO_MIP_25h7
+Version 2.0.13
+  - corrected bug in MSVC
+Version 2.0.12
+  - bug corrected in CameraParameters::resize
+
+Version 2.0.11
+  - improved marker::draw to cope better with large images
+  - possible bug in rectangle detection found.
+Version 2.0.10
+  - bug corrected in  aruco_print_dictionary
+  - bug corrected in markermap  (        if ( it!=m_meters.end())  )
+
+Version 2.0.9
+  - bug corrected in MarkerPoseTracker relative to the refence system. The reference system of the markers computed using the Marker::calculateExtrinsics was different from the ne of MarkerPoseTracker. Now, the one 
+  from MarkerPoseTRacker is the wining, since it is the same as the twin library markermapper.
+  Be careful since there might be a incompatiblilty issue in the reference system with preios data.
+Version 2.0.8
+  - bugs corrected in Marker::toStream and Marker::fromStream
+  - proposed solution to the ambiguity problem in MarkerPoseTracker. See posetracker.h for details
+Version 2.0.7
+  - removed <omp.h> from levmarq.h and included "ar_omp.h" instead
+  - M_PI substituted by 3.1415....
+  - added MarkerMap::calculateExtrinsics
+  - Conditional use of eigen3. It is only used if compiled against opencv2. In Opencv3 solvePnp works properly
+Version 2.0.6
+  - Many warnings removed
+Version 2.0.5
+  - Corrected bug in MarkerMapPoseTracker
+
+VERSION 2.0.4
+  - C++11 code 
+  - Markers ids are 64 bits (8x8)
+  - Predefined set of dictionaries. It includes ARUCO, ARUCOHRM, AprilTags, ArToolKit and ARTAG
+  - Added marker tracker. Avoids the problem of ambuguity? Hopefully
+  - Chromatic mask removed from libary.
+  - Removed Board and BoardDetector. This concepts are now expanded to the idea of MarkerMap and managed in classes MarkerInfo, MarkerMap and MarkerSetPoseTracker.
+    see utils_markerset for more examples.
+        This is to allow compatibility with the twin libary aruco_markermapper
+VERSION 1.3.1
+  - Added MarkerDetector::Param class to encapsulate all of them.
+  - Added calibration tool in utils/aruco_calibrate that uses aruco chessboards
+  - removed MarkerDetector::setDesiredSpeed and MarkerDetector::getDesiredSpeed
+  - removed HARRIS corner method from markerdetector and locked corners stuff
+  - Add SVMMarkers class to detect markers with generic patterns using a trained SVM model.
+  - Code refactoring to encapsulate the detectors into classes. Added the class MarkerLabeler and its factory creator
+  - in aruco_create_board, random seed is now manually set if, or 0 if not. This creates by default always the same board
 VERSION 1.3
   - Compatibility with OpenCV 3
   - In Marker Detector:

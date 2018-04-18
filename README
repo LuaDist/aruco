@@ -1,134 +1,229 @@
-ArUco: Augmented Reality library from the University of Cordoba
+ArUco: One library to rule them all
 -------------------------------------------------------------------
 
-ArUco is a minimal C++ library for detection of Augmented Reality markers based on OpenCv exclusively.
-
-It is an educational project to show student how to detect augmented reality markers and it is provided under BSD license.
-
+ArUco is an easy-to-use C++ library for detection of squared planar markers based on OpenCv. It can detect markers from a variety of ditionaries ARUCO, APRILTAGS, ARTAG and ARTOOLKIT+.
+It is a library, to rule them all ;)
 
 CONTACT: Rafael Munoz-Salinas: rmsalinas@uco.es 
 
+For further info read https://www.uco.es/investiga/grupos/ava/node/26
+
 \section INTRODUCTION
 
-The library relies on the use of coded markers. Each marker has an unique code indicated by the black and white colors in it. The libary detect borders, and analyzes into the rectangular regions which of them are likely to be markers. Then, a decoding is performed and if the code is valid, it is considered that the rectangle is a marker.
-
-The codification included into the marker is a slighly modified version of the Hamming Code. It has a total a 25 bits didived in 5 rows of 5 bits each. So, we have 5 words of 5 bits. Each word, contains only 2 bits of real information, the rest is for  and error detection/correction (error correction is yet to be done). As a conclusion, a marker contains 10 bits of real information wich allows 1024 different markers.
-
- 
+The library allows to detect squared planar markers in images. A   marker is a squared element with a black border and a inner binary code inside. The set of valid codes is called dictionary. Several libraries have been proposed, and each one usually includes its own dictionary of valid markers. This version of Aruco allows to use the most famous dictionaries: ARUCO,APRILTAGS,ARTAG,CHILITAGS,ARTOOLKIT+, etc.
 
 
+The library allows to estimate the pose of a camera from one or many  markers.
+
+In any case, we strongly recommend to use our dictionary ARUCO_MIP_36h12,  which in our opinion, is the one that has the best trade-off between size and robustness. See https://www.researchgate.net/publication/282426080_Generation_of_fiducial_marker_dictionaries_using_mixed_integer_linear_programming for more information on dictionary generation.
+
+You can download our dictionary at https://www.uco.es/investiga/grupos/ava/sites/default/files/salinas/aruco_mip_36h12_dict.zip or print it yourself using aruco_print_dictionary util.
+
+The library also allows to use marker maps. A marker map is a set of markers placed in the environment whose location w.r.t. each other does not change. The simplest marker map supported by the library is a set of markers printed in a piece of paper. Localization in  more robust since the misdetection of several markers of the map is not a problem as long as a minimum set of them are detected.
+
+Additionally, marker maps can also extend to much larger environments. Imagine you place markers in a room and you want to locate using them. Now, aruco allows you to do so using the brother library aruco_markermapper.
+
+
+For additional information to this README file, please visit our web page : http://www.uco.es/investiga/grupos/ava/node/26
+
+
+\section What's new in 3.x and how to port
+
+See Changelog for a more detailed description
+		- Removed the use of the parameters for configuring the detection. Now, you only need to use MarkerDetector::setDetectionMode() to specify how fast you want to be.
+		- Increased speed. It is now the fastest library for markers
+		- Added the capability of detecting markers of any type of markers n case you do not know wich type of dictionary you are using. However, it is prefereable to explicitly indicate the dictionary you are using.¡
+		- Calibration board changed
+		- Cmake improved
+
+
+The main improvement of version 3 is related to speed (see below for more info) and the management of dictionaries. We have added the meta dictionary Dicionary::ALL_DICTS. This is now the default dictionary and will detect markers in all the dictionaries.
+
+A great different  with version 2.0 is that you can select amongst a set of Dictionaries:   ARUCO_MIP_25h7,ARUCO_MIP_16h3, and ARUCO_MIP_36h12 which are hardcoded. Thus, you do not need external files describing the ditionary.
+
+We recommend using ARUCO_MIP_36h12, however, for compatibilty with old users, the default dictionary of the library is ARUCO, which is the original dictionary in previuos versions.  However, we recommend using ARUCO_MIP_36h12 because it is more robust to errors.
+
+The concept of Board (In 1.x version) is replaced by  MarkerMaps. 
+
+Also important, from this moment, the axis point in the same direction as given by opencv, i.e., Z axis is perperdicular to the marker. 
+
+
+With respect to performance, we have improved in several aspects. First, all markers are now analized in parallel (if omp is enabled/found at compile time). Second, we have added a pyramid method for marker detection. Once detected rectangles in the first level, we create the canonical image in the pyramid level that achieves the best trade-off between quality and size. So, the call to wrap function is now more constant. So, you'll not notice decrease in performance as you approach a marker and it becomes bigger.
+
+
+\section COMPILING
+
+Use cmake.
+
+* In linux
+
+(cd path;mkdir build;cd build cmake ..;make -j4;)
+
+In fact, I strongly recommend to install the library into your own working space instead of in the root file system. So I would do:
+(cd path;mkdir build;cd build cmake .. -DCMAKE_INSTALL_PREFIX=<pathToInstall>;make -j4 install;)
+
+*  In windows
+
+use cmake-gui, or QtCreator if you have not a lot of experience.
+
+Set the -DOPENCV_DIR variable pointing to the directory where it is.
+
+* To consider
+
+	- DUSE_OWN_EIGEN3=ON/OFF  : We need the eigen3 library. So we have a copy of it in 3drparty. However, if you prefer to use yours, set this parameter to OFF
+	- USE_DOUBLE_PRECISION_PNP=ON/OFF  The classes MarkerPoseTracker and   MarkerMapPoseTracker uses an optimization technique to estiamte the pose. By default we use double, but you can disable this option and float will be used instead.
+
+* OpenGL examples
+
+
+
+You must set the cmake option -DBUILD_GLSAMPLES=ON in cmake. I.e., cmake .. -DBUILD_GLSAMPLES=ON -DCMAKE_INSTALL_PREFIX=<pathToInstall>
+
+In Ubuntu 16 Install first freeglut3 : sudo apt-get install freeglut3 freeglut3-dev
+
+
+\section TESTING
+
+	Download the aruco test data from sourceforge and run the examples in the utils_xxx folders. Alternatively, windows user have a precompiled version. You have all the programs in the bin folder.
+	
 \section LIBRARY DESCRIPTION:
 
-The ArUco library contents are divided in two main directories. The src directory, which contains the library itself. And the utils directory which contains the applications.
+The ArUco library contents are divided in several  directories. 
+
+src/: contains the library
+3rdparty/: contains the external code required. Currently only eigen3 is in it. If you prefer using your own eigen3 see in COMPILING section
+utils/: utils for detection of individual markers.
+utils_markermap: utils for using markermaps
+utils_calibration: camera calibration utils. We provide a chessboard-like calibration board. You do need to see complete to do calibration so it is much better!
+utils_gl: examples on how to use the library with OpenGL. Requires to enable -DBUILD_GLSAMPLES=ON in cmake file.
+
+
 
 The library main classes are:
 
    - aruco::Marker: which represent a marker detected in the image
-   - aruco::MarkerDetector: that is in charge of deteting the markers in a image Detection is done by simple calling the member funcion ArMarkerDetector::detect(). Additionally, the classes contain members to create the required matrices for rendering using OpenGL. See aruco_test_gl for details
-   - aruco::BoardConfiguration: A board is an array of markers in a known order. BoardConfiguracion is the class that defines a board by indicating the id of its markers. In addition, it has informacion about the distance between the markers so that extrinsica camera computations can be done.
-   - aruco::Board: This class defines a board detected in a image. The board has the extrinsic camera parameters as public atributes. In addition, it has a method that allows obtain the matrix for getting its position in OpenGL (see aruco_test_board_gl for details).
-   - aruco::BoardDetector : This is the class in charge of detecting a board in a image. You must pass to it the set of markers detected by ArMarkerDetector and the BoardConfiguracion of the board you want to detect. This class will do the rest for you, even calculating the camera extrinsics.
+   - aruco::MarkerDetector: that is in charge of deteting the markers in a image Detection is done by simple calling the member funcion ArMarkerDetector::detect(). You can select the dictionary you want to use calling 
+		ArMarkerDetector::setDictionary(). (see programs in utils)
+   - aruco::MarkerPoseTracker: tracks the pose of the camera wrt to a marker. Instead of recalculating the pose everytime from scratch, the tracker takes advantage of knowing the previous location to refine the current location. This is specially useful when the ambiguity problem arises. The ambiguity problem refers to the fact that some times there are more than one valid poses for the given view. In that cases, the pose returned by the estimator is any of them. However, using the tracker you can avoid this problem in many cases. See utils/aruco_tracker.cpp for an example.
 
-\subsection BOARDS
-
-Aruco allows the possibility to employ board. Boards are markers composed by an array of markers arranged in a known order. The advantages of using boards instead of simple markers are:
- - More robusteness. The misdetection of several markers of the board is not a problem as long as a minimum set of them are detected.
- - More precision. Since there are a larger number of corners, camera pose estimation becomes more precise.
+   - aruco::MarkerMap: represents a set of markers whose location is known wrt to each other. (see programs in utils_markermap)
+   - aruco::MarkerMapPoseTracker: is the class employed to estimate the pose of the camera wrt the set of markers.
+   - aruco::CvDrawingUtils: a class with some routines for drawing in opencv images
 
 
-A Board contains several markers so that they are more robustly detected.  In general, a board is a set of markers. So BoardConfiguration is only 
-a list  of the id of the markers along with the position of their corners.
- 
-The position of the corners can be specified either in pixels (in a non-specific size) or in meters. The first is the 
-typical case in which you generate the image of  board  and the print it. Since you do not know in advance the real 
-size of the markers, their corners are specified in pixels, and then, the translation to meters can be made once you 
-know the real size. On the other hand, you may want to have the information of your boards in meters in your 
-configuration file once you have created it. The BoardConfiguration allows you to do so.
+\subsection Marker Maps
 
-Creating boards in managed by two applications. First, use aruco_create_board to create the image of the board. 
-Print it and use your measurer to know the real size of the markers. Then, you can use aruco_board_pix2meters to create 
-new configuration file that expresses the board in meters. So, you no longer need to remember the size of your markers.
+Marker maps exteds the concept of Board in the previous version of the library
 
-Since version 1.2, aruco allows to create boards with chessboard configuration. To support the detection of chessboards, we need to apply an erosion in the image when detecting markers.
-This is an option that can be disabled in MarkerDetector::enableErosion. By default, it is enabled. However, disabling it can speed up the process up to a 10%. So if you 
-do not want to use chessboards, disable it.
+Image you want to locate a robot in a laboratory. Then, you can place markers around the environment, record a video with the camera, and automatically obtain the location of the markers (this is call the marker map).
+With the marker map, you can now locate the robot by looking a any of the makers.
+
+
+You can create simple marker maps with the aruco libary, such as boards. A board is a grid of markers printed on a piece of paper. Since they are all in the same piece of paper, their location wrt each other are known in advance. 
+
+However, for the case of the robot previouly explained, it is not known 3D the locations of the markers. So the  library marker_mapper allows to determine their location from a video sequence, and then, use the result in tacking tasks using aruco library. See the example utils_markermap/aruco_test_markermap.cpp to know how to do the job. The program also generates a pcd file showing the 3d location of the markers and of the camera along its trayectory. Additionally, the program can also output the 3d location to a log file.
+
+
 
 \subsection APPLICATIONS
 
 - The library comes with several applications that will help you to learn how to use the library:
- -# aruco_create_marker: which creates marker and saves it in a jpg file you can print.
- -# aruco_simple : simple test aplication that detects the markers in an image
- -# aruco_test: this is the main application for detection. It reads images either from the camera of from a video and detect markers. Additionally, if you provide the intrinsics of the camera(obtained by OpenCv calibration) and the size of the marker in meters, the library calculates the marker intrinsics so that you can easily create your AR applications.
- -# aruco_test_gl: shows how to use the library AR applications using OpenGL for rendering
- -# aruco_create_board: application that helps you to create a board
- -# aruco_board_pix2meters: application that helps you to convert a board configuration file from pixels(as provided by aruco_create_board) to meters.
- -# aruco_test_board: application that detects boards
- -# aruco_simple_board: simple application that detects boards in an image
- -# aruco_test_board_gl: application that detects boards and uses OpenGL to draw
+ -# utils/aruco_print_marker: which creates marker and saves it in a jpg file you can print.
+ -# utils/aruco_print_dictionary: saves to a dictionary all the markers of the dictionary indicated(ARUCO,APRILTAGS,ARTOOLKIT+,etc).
+ -# utils/aruco_simple : simple test aplication that detects the markers in an image
+ -# utils/aruco_test: this is the main application for detection and profiling. It reads images either from the camera of from a video and detect markers. You have a menu to play with the different parameters of the library. Additionally, if you provide the intrinsics of the camera(obtained by OpenCv calibration) and the size of the marker in meters, the library calculates the marker intrinsics so that you can easily create your AR applications.
+ -# utils/aruco_tracker: example showing how to use the tracker. 
+
+
+ -# utils_markermap/aruco_create_markermap: creation of simple marker maps (the old boards). It creates a grid of markers that can be printed in a piece of paper.
+	The result of this program are two files (.png and .yml) The png file is an image of the marker you can print. The .yml file is the configuration file that you'll need to pass to the rest of the programs, so they know how the map is.  The .yml contains the location of the markers in pixels. Since we do not know in advance how large the printed marker will be, we use pixels here. However, in order to obtain the camera, w need to know the real size of the marker. For this pourpose, you can either use the program  utils_markermap/aruco_markermap_pix2meters, that creates a new .yml, with the map information in meters. Alternatively, all the test programs allows you to indicate the markersize in the command line. 
  
+ -# utils_markermap/aruco_markermap_pix2meters converts a markermap configuration file from pixels to meters
+ -# utils_markermap/aruco_simple_markermap : simple example showing how to determine the camera pose using the marker maps
+ -# utils_markermap/aruco_test_markermap : a bit more elaborated example showing how to determine the camera pose using the marker maps with 3D visualization.
  
-\subsection HIGHLY RELIABLE MARKERS
-After version 1.2.5, ArUco includes a new type of marker codification know as Highly Reliable Markers (hrm). The main benefits are: (i) number of markers and marker size is customizable by the user and (ii) error correction can be applied. 
-For more details, see "S. Garrido-Jurado, R. Muñoz-Salinas, F.J. Madrid-Cuevas, M.J. Marín-Jiménez, Automatic generation and detection of highly reliable fiducial markers under occlusion, Pattern Recognition, Volume 47, Issue 6, June 2014"
-The 'utils_hrm' folder contains some applications to test these markers
- -# aruco_hrm_create_dictionary: creates customized dictionary of highly reliable markers
- -# aruco_hrm_test: basic application for single marker detection
- -# aruco_hrm_create_board: create a board of hrm markers, it can also create chromatic boards for occlusion map (see paper for more information)
- -# aruco_hrm_test_board: detect board. If use chromatic board it can also generate occlusion mask
+  
+ -# utils_calibration/aruco_calibration : a program to calibrate a camera using a marker set comprised by aruco markers.  It is a marker map,you can download at
+  https://www.uco.es/investiga/grupos/ava/sites/default/files/salinas/aruco_calibration_grid_board_a4.pdf
 
+ -# utils_calibration/aruco_calibration_fromimages the same as above, but from images saved in a file
+
+ -# utils_gl/aruco_test_gl simple example showing how to combine aruco with OpenGL
+ 
+ NOTE ON OPENGL: The library supports  the integration with OpenGL. In order to compile with support for OpenGL, you just have  installed in your system the develop packages for GL and glut (or freeglut).
+ 
+\section Dictionaries and Speed
+
+\subsection Dictionaries
+
+Aruco version 3 is able to detect from a wide variety of dictionaries. The valid dictionaries are enumerated in Dictionary::DICT_TYPES (dictionary.h). As you can see, we a specific dictionary  named ALL_DICTS. By default, MarkerDetector is a configured in this dictionary. It is not really a dictionary but a metadictionary that represent all the valid ones that the library can detect. So, an user that does not know much about the library can work easily. 
+
+ We strongly recommend to use ARUCO_MIP36h12 (https://www.uco.es/investiga/grupos/ava/sites/default/files/salinas/aruco_mip_36h12_dict.zip) and to explictly indicate it by calling MarkerDetector::setDictionary("ARUCO_MIP36h12")  before starting to call MarkerDetector::detect(). 
+
+If you work using  ALL_DICTS instead of the one you really are using, there are more chances to get detection errors.
+
+Finally, it is important to indicate that Marker::dict_info will tell you the dictionary a marker belong (this is new in version 3).
+
+
+\subsection Speed
+
+ArUco version 3 main changes are related to speed and to ease of usage. To do so, we define two main concepts:  Minimum Marker Size and Detection Mode.
+ 
+* Minimum Marker Size
+
+In most cases when detecting markers, we are interested in markers of a minumum size. Either we know that markers will have a minimum size in the image, or we are not interested in very small markers because they are not reliable for camera pose estimation. Thus, ArUco 3 defines a method to increase the speed by using images of smaller size for the sake of detection. However, please notice that the precision is not affected by this fact, only computing time is reduced. In order to be general and to adapt to any image size, the minimum marker size is expressed as a normalized value (0,1) indicating the minimum area that a marker must occupy in the image to consider it valid. The value 0 indicates that all markers are considered as valid. As the minimum size increases towards 1, only big markers will be detected.
+ 
+Which value should I use? Well, you should try in your own video sequences to get the best results. However, we have found that setting this value to 0.02 (2% of the image area) has a tremendous impact in the speed. If you are processing video and you want maximum speed, you can use the Detection mode DM_VIDEO_FAST (see below) and it will automatically compute the minimum marker by considering the information in the previous frame.
+ 
+* Detection Mode
+
+(See MarkerDetector::DetectionMode in markerdetector.h) refers to three basic use cases that we can normally find among the ArUco users:
+ - DM_NORMAL: this is the case of requiring to detect markers in images, and not taking much care about the computing time. This is normally the case of a batch processing in which  computing time is not a problem. In this case, we apply a local adaptive threshold approach which is very robust. This is the approach used in ArUco version 2.
+ - DM_FAST: in this case, you are concern about speed. Then, a global threshold approach is employed, that randomly searches the best threshold. It works fine in most cases.
+ - DM_VIDEO_FAST: this is specially designed for processing video sequences. In this mode, a global threshold is automatically determined at each frame, and the minimum marker size is also automatically determined in order achieve the maximum speed. If the marker is seen very big in one image, in the next frame, only markers of similar size are searched.
+
+By default, the MarkerDetector is configured to be conservative, i.e., with minimum marker size to zero, and in DM_NORMAL mode. If you want to change this behaviour, you need to call:
+
+void MarkerDetector::setDetectionMode( DetectionMode dm,float minMarkerSize=0);  
+
+before detecting markers.
 
  
-\section COMPILING THE LIBRARY:
+\section Calibration
 
- REQUIREMENTS: OpenCv >= 2.4.9, cmake >= 2.8
- OPTIONAL:   OpenGL for aruco_test_gl and aruco_test_board_gl
+Camera calibration is a required step if you want to estimate the location of your camera. Aruco has its own calibration board that has an advantage over the classical opencv chessboard: since it is composed by several markers, you do not need to see it completely in order to obtain calibration points. Instead, you can see if partially and still works. This is a very convenient feature in many applications. You have programs in utils_calibration to use calibrate using our chessboard.
 
-\subsection LINUX:
+To calibrate you should do the following. First, download the calibration board and print it in a piece of paper ( https://www.uco.es/investiga/grupos/ava/sites/default/files/salinas/aruco_calibration_grid_board_a4.pdf)
 
-Go to the aruco library and do
->mkdir build
->cd build
->cmake ..
->make
->make install (optional) 
+Use a tape to measure the size of the markers. Please, be very precise. Annotate the size in meters or in your prefered metric. Please notice that when you compute the distance of your camera to the markers, it will be in the metric you use. So, if you measure the size of the markers in meters, then, you camera position will be expressed in meters too.
 
-NOTE ON OPENGL: The library supports eaily the integration with OpenGL. In order to compile with support for OpenGL, you just have  installed in your system the develop packages for GL and glut (or freeglut).
-
-\subsection WINDOWS
-
-We have successfully compiled in in two compilers: MSVC2010 and MinGW. 
-In both cases cmake and OpenCv are required first. So install them
+Once printed and measured, take photos of the board from different locations and perspectives. Take at least 15 photos, and try to see the whole board in all of them.  Then, use the program in utils_calibration/aruco_calibration_fromimages as
 
 
-\subsubsection Microsoft Visual C++ (Express Edition 2010)
-
-a) Downdload MSVC 2010 (http://www.microsoft.com/visualstudio/en-us/products/2010-editions/express).
-b) Use cmake to create the project. Compile and run!
-
-\subsubsection MinGW and codeblocks
-
-The library has been compiled using MinGW and codeblocks. Below I describe the best way to compile it that I know. If you know better, please let me know.
-
-  step 1) codeblocks
-    -# Download codeblocks. I recommend to download the version 10.5 with mingw included (codeblocks-10.05mingw-setup.exe)
-    -# Install and set the PATH variable so that the codeblock/mingw/bin directory is included. In my case "c:\codeblocks\mingw\bin". This will allow cmake to find the compiler.
-    -# The codeblock program will not find the mingw path by deafult. So, run codeblocks and go to setting->Compuiler debugger and set the correct path to the MinGW dir.
-
- step 2) aruco
-     -# download and decompress.
-     -# Open cmake gui application and set the path to the main library directory and also set a path where the project is going to be built. Generate the codeblock project.
-     -# Open the project with codeblock and compile then, install. The programs will be probably generated into the bin directory
+aruco_calibration_fromimages mycalibrationfile.yml -size 0.03 image1.jpg image2.jpg ...
 
 
-OpenGL: by default, the mingw version installed has not the glut library. SO, the opengl programs are not compiled.  If you want to compile with OpenGL support, you must install glut, or prefereably freeglut.
-So, download the library (http://www.martinpayne.me.uk/software/development/GLUT/freeglut-MinGW.zip) for mingw. Decompress in a directory X. Then, rerun cmake setting the variable GLU_PATH to that directory
->cmake .. -DGLUT_PATH="C:\x"
-Finally, recompile and test. Indeed, you should move the freeglut.dll to the directory with the binaries or to any other place in the PATH.
-
-\section Testing
-
-For testing the applications, the library provides videos and the corresponding camera parameters of these videos. Into the directories you will find information on how to run the examples.
+the parameter mycalibrationfile.yml will be the output of the process. The parameter 0.03 is the size of each marker (you measured earlier), and then the images used for calibration. Alternatively, you can calibrate a camera connected to your computer using the program aruco_calibration, which is an interactive calibration program.
 
 
+
+\section Custom Dictionaries
+
+Aruco allows to use your own dictionaries. To do so, first write the definition of your dictionary. Imagine you want to create a dictionary of 3 markers with size 3x3 bits .
+
+
+You must create then the following file (A copy of this file is in utils/myown.dict )
+
+name MYOWN
+nbits  9
+010001001
+111101010
+000001100
+
+Please notice that the bits are expressed from topleft corner to bottomright corner.
+Then, you might want to print your dictionary. So, use the aplication utils/aruco_print_dictionary as:
+./utilts/aruco_print_dictionary <pathToSaveAllImages>  <pathto/myown.dict>
+
+In the directory indicated as first parameter, the images will be saved. Then, print them and take a picture. To test if it works, use utils/aruco_test. In that case, pass the parameter -d  <pathto/myown.dict>. It will automatically load your dict and use it.
 
 
