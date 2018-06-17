@@ -39,7 +39,7 @@ set_target_properties(aruco PROPERTIES          # create *nix style library vers
     VERSION ${PROJECT_VERSION}
     SOVERSION ${PROJECT_SOVERSION}
     CLEAN_DIRECT_OUTPUT 1                       # allow creating static and shared libs without conflicts
-    OUTPUT_NAME "aruco${PROJECT_DLLVERSION}"    # avoid conflicts between library and binary target names
+    OUTPUT_NAME "aruco"    # avoid conflicts between library and binary target names
 )
 
 #include(GenerateExportHeader)
